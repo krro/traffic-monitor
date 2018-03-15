@@ -4,22 +4,22 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, ActorSystem}
 
 import scala.concurrent.duration._
-import akka.stream.scaladsl.{Merge, Source}
+import akka.stream.scaladsl.Source
 import com.jayway.jsonpath.JsonPath
 
 trait RequestSources extends Downloader with Utils {
 
-  def createEndpointDownloadEventSource(endpoints: List[Endpoint], statusActor: ActorRef): Source[Endpoint, _] = {
+  def createEndpointDownloadEventSource(endpoints: List[Endpoint], statusActor: ActorRef)(implicit actorSystem: ActorSystem): Source[Endpoint, _] = {
     combine(
       endpoints
       .filter(!_.inner)
       .map(createEndpointDownloadEventSource(_, endpoints, statusActor)))
   }
 
-  private def createEndpointDownloadEventSource(endpoint: Endpoint, endpoints: List[Endpoint], statusActor: ActorRef) = {
+  private def createEndpointDownloadEventSource(endpoint: Endpoint, endpoints: List[Endpoint], statusActor: ActorRef)(implicit actorSystem: ActorSystem) = {
     endpoint.trigger.map { trigger =>
       val innerEndpoint = endpoints.filter(_.name == trigger).head
       createComplexSource(endpoint, innerEndpoint, statusActor)
@@ -27,14 +27,14 @@ trait RequestSources extends Downloader with Utils {
   }
 
   private def createSimpleTickSource(endpoint: Endpoint): Source[Endpoint, _] = {
-    Source.tick(1 second, endpoint.interval.get seconds, endpoint)
+    Source.tick(1 second, endpoint.interval seconds, endpoint)
   }
 
-  private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, statusActor: ActorRef): Source[Endpoint, _] = {
+  private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, statusActor: ActorRef)(implicit actorSystem: ActorSystem): Source[Endpoint, _] = {
     createSimpleTickSource(endpoint)
       .mapAsync(1)(downloadEndpoint(_, statusActor))
-      .flatMapConcat { case (_, content) =>
-        endpointsToTrigger(endpoint, content, innerEndpoint)
+      .flatMapConcat {
+        case (_, content) => endpointsToTrigger(endpoint, content, innerEndpoint)
       }
   }
 
@@ -43,7 +43,7 @@ trait RequestSources extends Downloader with Utils {
 
     val endpointsToRun = allEndpointsToRun(endpointToTrigger, extractions)
 
-    combine(endpointsToRun.map(createSimpleTickSource))
+    combine(endpointsToRun.map(createSimpleTickSource).map(_.takeWithin(endpoint.interval seconds)))
   }
 
   private def findAllExtractions(endpoint: Endpoint, content: String) = {
