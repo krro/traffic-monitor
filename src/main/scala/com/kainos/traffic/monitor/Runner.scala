@@ -17,6 +17,10 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
 
   val statusActor = actorSystem.actorOf(Props[Status])
 
+  val httpRoutes = new HttpRoutes(endpoints, statusActor)
+
+  val bindingFuture = Http().bindAndHandle(httpRoutes.routes, "localhost", 8080)
+
   val kafka = Sink.ignore // kafkaProducer
 
   val stream =
@@ -25,19 +29,16 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
     .map {
       case (endpoint, content) => createRecord(endpoint, content)
     }
-    .log("got msg")
     .runWith(kafka)
-
-  val httpRoutes = new HttpRoutes(endpoints, statusActor)
-
-  val bindingFuture = Http().bindAndHandle(httpRoutes.routes, "localhost", 8080)
-
-  StdIn.readLine()
-
-  bindingFuture
-    .flatMap(_.unbind())
-    .onComplete(_ => {
-      actorSystem.terminate()
-    })
+    .onComplete {
+      case res => {
+        println(res)
+        bindingFuture
+          .flatMap(_.unbind())
+          .onComplete(_ => {
+            actorSystem.terminate()
+          })
+      }
+    }
 
 }
