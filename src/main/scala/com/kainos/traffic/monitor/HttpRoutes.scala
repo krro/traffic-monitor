@@ -18,7 +18,7 @@ class HttpRoutes(endpoints: List[Endpoint], statusActor: ActorRef)(implicit exec
 
   implicit val paramFormat = jsonFormat4(Param)
   implicit val extractionFormat = jsonFormat2(Extraction)
-  implicit val endpointFormat = jsonFormat7(Endpoint)
+  implicit val endpointFormat = jsonFormat8(Endpoint)
   implicit val statusFormat = jsonFormat2(StatusMsg)
   implicit val printer = PrettyPrinter
 
