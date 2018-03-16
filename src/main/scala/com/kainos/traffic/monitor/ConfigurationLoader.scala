@@ -8,7 +8,7 @@ case class Extraction(name: String, path: String)
 
 case class Param(name: String, paramType: String, values: List[String] = Nil, format: Option[String] = None)
 
-case class Endpoint(name: String, url: String, interval: Int, trigger: Option[String] = None, extractions: List[Extraction] = Nil, params: List[Param] = Nil, inner: Boolean = true, ignore: Boolean = false)
+case class Endpoint(name: String, url: String, interval: Int, trigger: Option[String] = None, extractions: List[Extraction] = Nil, params: List[Param] = Nil, inner: Boolean = false, ignore: Boolean = false)
 
 trait ConfigurationLoader {
 

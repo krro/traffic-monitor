@@ -15,9 +15,14 @@ class HttpRoutesTest extends WordSpec with Matchers with ScalatestRouteTest {
 
     val currentKeys = List("url3", "url4")
 
-    val status = TestProbe()
+    val statusActor = TestProbe()
 
-    val httpRoutes = new HttpRoutes(endpoints, status.ref)
+    val httpRoutes = new HttpRoutes(endpoints, statusActor.ref)
+
+    val request = Get("/api/status") ~> httpRoutes.routes
+
+    statusActor.expectMsg(Status.GetKeys)
+    statusActor.reply(Status.Keys(currentKeys))
 
   }
 
@@ -27,10 +32,7 @@ class HttpRoutesTest extends WordSpec with Matchers with ScalatestRouteTest {
 
       import httpRoutes._
 
-      Get("/api/status") ~> httpRoutes.routes ~> check {
-        status.expectMsg(Status.GetKeys)
-        status.reply(Status.Keys(List("url3", "url4")))
-
+      request ~> check {
         handled shouldEqual(true)
         status shouldEqual(StatusCodes.OK)
         responseAs[StatusMsg].endpoints shouldEqual(endpoints)
@@ -42,10 +44,7 @@ class HttpRoutesTest extends WordSpec with Matchers with ScalatestRouteTest {
 
       import httpRoutes._
 
-      Get("/api/status") ~> httpRoutes.routes ~> check {
-        status.expectMsg(Status.GetKeys)
-        status.reply(Status.Keys(currentKeys))
-
+      request ~> check {
         handled shouldEqual(true)
         status shouldEqual(StatusCodes.OK)
         responseAs[StatusMsg].currentTasks shouldEqual(currentKeys)

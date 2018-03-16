@@ -34,6 +34,9 @@ trait Downloader {
     Http(actorSystem)
       .singleRequest(HttpRequest(uri = url, method = HttpMethods.GET))
       .flatMap { httpResponse =>
+
+        actorSystem.log.info("got response: [{}] on url: [{}]", httpResponse.status, url)
+
         httpResponse
           .entity
           .withoutSizeLimit()

@@ -24,11 +24,12 @@ trait RequestSourceCreator extends Downloader with Utils {
   }
 
   private def createSimpleTickSource(endpoint: Endpoint): Source[Endpoint, _] = {
-    Source.tick(1 second, endpoint.interval seconds, endpoint)
+    Source.tick(0 second, endpoint.interval seconds, endpoint)
   }
 
   private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, ops: Ops)(implicit executionContext: ExecutionContext): Source[Endpoint, _] = {
     createSimpleTickSource(endpoint)
+      .log("getting top-level hierarchy", e => e.url)
       .mapAsync(1)(e => ops.downloader(e).map(content => (e, content)))
       .flatMapConcat {
         case (_, content) => endpointsToTrigger(endpoint, content, innerEndpoint, ops)

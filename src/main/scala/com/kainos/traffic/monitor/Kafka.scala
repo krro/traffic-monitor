@@ -4,6 +4,7 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.kafka.ProducerSettings
 import akka.kafka.scaladsl.Producer
+import akka.stream.{ActorAttributes, Supervision}
 import akka.stream.scaladsl.Sink
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -23,7 +24,9 @@ trait KafkaProducer extends DefaultJsonProtocol {
 
   def kafkaProducer(implicit system: ActorSystem): ProducerSink = {
     val producerSettings = ProducerSettings(system, new StringSerializer, new StringSerializer)
-    Producer.plainSink(producerSettings)
+    Producer
+      .plainSink(producerSettings)
+//      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider))
   }
 
   def createRecord(endpoint: Endpoint, content: String): ProducerMessage = {

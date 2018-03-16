@@ -2,7 +2,7 @@ package com.kainos.traffic.monitor
 
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorAttributes, ActorMaterializer, Supervision}
 import akka.stream.scaladsl.Sink
 
 import scala.concurrent.Future
@@ -28,12 +28,14 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
 
   val stream =
     createEndpointDownloadEventSource(endpoints, new Ops(downloader, extract, parameterize))
+    .log("fetching endpoint", e => e.url)
     .mapAsync(5) { endpoint =>
       downloader(endpoint).map((endpoint, _))
     }
     .map { case (endpoint, content) =>
       createRecord(endpoint, content)
     }
+    .log("pushing to kafka", e => e.key())
     .runWith(kafka)
     .onComplete {
       case result => {
