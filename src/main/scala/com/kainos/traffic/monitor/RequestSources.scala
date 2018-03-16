@@ -1,28 +1,25 @@
 package com.kainos.traffic.monitor
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util
-
-import akka.actor.{ActorRef, ActorSystem}
-
 import scala.concurrent.duration._
 import akka.stream.scaladsl.Source
-import com.jayway.jsonpath.JsonPath
+
+import scala.concurrent.{ExecutionContext, Future}
 
 trait RequestSources extends Downloader with Utils {
 
-  def createEndpointDownloadEventSource(endpoints: List[Endpoint], statusActor: ActorRef)(implicit actorSystem: ActorSystem): Source[Endpoint, _] = {
+  class Ops(val downloader: Endpoint => Future[String], val extractor: (String, List[Extraction]) => Map[String, List[String]], val parameterizer: (Endpoint, Map[String, List[String]]) => List[Endpoint])
+
+  def createEndpointDownloadEventSource(endpoints: List[Endpoint], ops: Ops)(implicit executionContext: ExecutionContext): Source[Endpoint, _] = {
     combine(
       endpoints
       .filter(!_.inner)
-      .map(createEndpointDownloadEventSource(_, endpoints, statusActor)))
+      .map(createEndpointDownloadEventSource(_, endpoints, ops)))
   }
 
-  private def createEndpointDownloadEventSource(endpoint: Endpoint, endpoints: List[Endpoint], statusActor: ActorRef)(implicit actorSystem: ActorSystem) = {
+  private def createEndpointDownloadEventSource(endpoint: Endpoint, endpoints: List[Endpoint], ops: Ops)(implicit executionContext: ExecutionContext) = {
     endpoint.trigger.map { trigger =>
       val innerEndpoint = endpoints.filter(_.name == trigger).head
-      createComplexSource(endpoint, innerEndpoint, statusActor)
+      createComplexSource(endpoint, innerEndpoint, ops)
     }.getOrElse(createSimpleTickSource(endpoint))
   }
 
@@ -30,58 +27,22 @@ trait RequestSources extends Downloader with Utils {
     Source.tick(1 second, endpoint.interval seconds, endpoint)
   }
 
-  private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, statusActor: ActorRef)(implicit actorSystem: ActorSystem): Source[Endpoint, _] = {
+  private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, ops: Ops)(implicit executionContext: ExecutionContext): Source[Endpoint, _] = {
     createSimpleTickSource(endpoint)
-      .mapAsync(1)(downloadEndpoint(_, statusActor))
+      .mapAsync(1)(e => ops.downloader(e).map(content => (e, content)))
       .flatMapConcat {
-        case (_, content) => endpointsToTrigger(endpoint, content, innerEndpoint)
+        case (_, content) => endpointsToTrigger(endpoint, content, innerEndpoint, ops)
       }
   }
 
-  private def endpointsToTrigger(endpoint: Endpoint, content: String, endpointToTrigger: Endpoint): Source[Endpoint, _] = {
-    val extractions = findAllExtractions(endpoint, content)
+  private def endpointsToTrigger(endpoint: Endpoint, content: String, endpointToTrigger: Endpoint, ops: Ops): Source[Endpoint, _] = {
+    val extractions = ops.extractor(content, endpoint.extractions)
 
-    val endpointsToRun = allEndpointsToRun(endpointToTrigger, extractions)
+    val endpointsToRun = ops.parameterizer(endpointToTrigger, extractions)
 
-    combine(endpointsToRun.map(createSimpleTickSource).map(_.takeWithin(endpoint.interval seconds)))
-  }
-
-  private def findAllExtractions(endpoint: Endpoint, content: String) = {
-    endpoint.extract.map { extract =>
-      (extract.name, extractValues(extract.path, content))
-    }.toMap
-  }
-
-  private def allEndpointsToRun(endpointToTrigger: Endpoint, extractions: Map[String, List[String]]) = {
-    endpointToTrigger.params.foldLeft(List(endpointToTrigger)) {
-      case (currentEndpoints, param) =>
-
-        val values = param.paramType match {
-          case "extracted" => extractions(param.name)
-          case "enumerated" => param.values
-          case "date" => dateParams(param)
-        }
-
-        currentEndpoints.flatMap { currentEndpoint =>
-          values.map { v =>
-            val newUrl = currentEndpoint.url.replaceAll(s"\\{${param.name}\\}", v)
-            currentEndpoint.copy(url = newUrl)
-          }
-        }
-    }
-  }
-
-  private def dateParams(param: Param) = {
-    param.values.map {
-      case "yesterday" => LocalDateTime.now().minusDays(1)
-      case "today" => LocalDateTime.now()
-    }.map(_.format(DateTimeFormatter.ofPattern(param.format.getOrElse("YYYY-MM-dd"))))
-  }
-
-  private def extractValues(extract: String, content: String): List[String] = {
-    val json = content
-    val javaList: util.List[Object] = JsonPath.parse(json).read(extract)
-    val scalaList = scala.collection.JavaConverters.asScalaBuffer(javaList).toList.distinct
-    scalaList.map(_.toString)
+    combine(
+      endpointsToRun
+      .map(createSimpleTickSource)
+      .map(_.takeWithin(endpoint.interval seconds)))
   }
 }

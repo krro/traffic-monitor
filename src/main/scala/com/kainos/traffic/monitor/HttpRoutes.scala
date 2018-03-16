@@ -4,8 +4,8 @@ import akka.actor.ActorRef
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.util.Timeout
 import akka.pattern.ask
+import akka.util.Timeout
 import com.kainos.traffic.monitor.Status.{GetKeys, Keys}
 import spray.json.{DefaultJsonProtocol, PrettyPrinter}
 

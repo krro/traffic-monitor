@@ -3,10 +3,11 @@ package com.kainos.traffic.monitor
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{ Sink }
-import scala.io.StdIn
+import akka.stream.scaladsl.Sink
 
-object Runner extends App with KafkaProducer with ConfigurationLoader with Downloader with RequestSources {
+import scala.concurrent.Future
+
+object Runner extends App with KafkaProducer with ConfigurationLoader with Downloader with RequestSources with Extractions with Parameterizer {
 
   implicit val actorSystem = ActorSystem("monitor")
   implicit val materializer = ActorMaterializer()
@@ -17,6 +18,8 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
 
   val statusActor = actorSystem.actorOf(Props[Status])
 
+  val downloader: Endpoint => Future[String] = downloadEndpoint(_, statusActor)
+
   val httpRoutes = new HttpRoutes(endpoints, statusActor)
 
   val bindingFuture = Http().bindAndHandle(httpRoutes.routes, "localhost", 8080)
@@ -24,15 +27,16 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
   val kafka = Sink.ignore // kafkaProducer
 
   val stream =
-    createEndpointDownloadEventSource(endpoints, statusActor)
-    .mapAsync(5)(downloadEndpoint(_, statusActor))
+    createEndpointDownloadEventSource(endpoints, new Ops(downloader, extract, parameterize))
+    .mapAsync(5) { endpoint =>
+      downloader(endpoint).map((endpoint, _))
+    }
     .map {
       case (endpoint, content) => createRecord(endpoint, content)
     }
     .runWith(kafka)
     .onComplete {
-      case res => {
-        println(res)
+      case _ => {
         bindingFuture
           .flatMap(_.unbind())
           .onComplete(_ => {

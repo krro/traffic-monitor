@@ -4,8 +4,8 @@ import akka.stream.scaladsl.{Merge, Source}
 
 trait Utils {
 
-  def combine(sources: List[Source[Endpoint, _]]): Source[Endpoint, _] = {
-    Source.combine(Source.empty[Endpoint], Source.empty[Endpoint], sources: _*)(Merge(_))
+  def combine[T](sources: List[Source[T, _]]): Source[T, _] = {
+    Source.combine(Source.empty[T], Source.empty[T], sources: _*)(Merge(_))
   }
 
 }
