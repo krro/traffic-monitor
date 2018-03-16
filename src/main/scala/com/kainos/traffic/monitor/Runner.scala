@@ -28,14 +28,12 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
 
   val stream =
     createEndpointDownloadEventSource(endpoints, new Ops(downloader, extract, parameterize))
-    .log("fetching endpoint", e => e.url)
     .mapAsync(5) { endpoint =>
       downloader(endpoint).map((endpoint, _))
     }
     .map { case (endpoint, content) =>
       createRecord(endpoint, content)
     }
-    .log("pushing to kafka", e => e.key())
     .runWith(kafka)
     .onComplete {
       case result => {

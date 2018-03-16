@@ -17,3 +17,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream-kafka" % "0.19"
 libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit" % "10.0.11" % "test"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+
+libraryDependencies += "net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test"

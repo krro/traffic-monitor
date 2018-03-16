@@ -23,16 +23,19 @@ trait KafkaProducer extends DefaultJsonProtocol {
   implicit val kafkaFormat = jsonFormat4(KafkaMsg)
 
   def kafkaProducer(implicit system: ActorSystem): ProducerSink = {
-    val producerSettings = ProducerSettings(system, new StringSerializer, new StringSerializer)
     Producer
-      .plainSink(producerSettings)
-//      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider))
+      .plainSink(kafkaSettings(system))
+      .withAttributes(ActorAttributes.supervisionStrategy(Supervision.resumingDecider))
   }
 
   def createRecord(endpoint: Endpoint, content: String): ProducerMessage = {
     val hash = DigestUtils.md5Hex(content)
     val message = KafkaMsg(endpoint.name, System.currentTimeMillis(), content, hash)
     new ProducerRecord[String, String](endpoint.name, PrettyPrinter(message.toJson))
+  }
+
+  def kafkaSettings(system: ActorSystem) = {
+    ProducerSettings(system, new StringSerializer, new StringSerializer)
   }
 
 }
