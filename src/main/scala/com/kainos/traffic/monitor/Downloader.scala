@@ -16,12 +16,12 @@ trait Downloader {
   def downloadEndpoint(endpoint: Endpoint, statusActor: ActorRef)(implicit actorSystem: ActorSystem): Future[String] = {
     import actorSystem.dispatcher
 
-    statusActor ! DownloadStart(endpoint.name)
+    statusActor ! DownloadStart(endpoint.url)
 
     val futureResult = downloadEndpoint(endpoint.url)
 
     futureResult.onComplete {
-      case _ => statusActor ! DownloadEnd(endpoint.name)
+      case _ => statusActor ! DownloadEnd(endpoint.url)
     }
 
     futureResult

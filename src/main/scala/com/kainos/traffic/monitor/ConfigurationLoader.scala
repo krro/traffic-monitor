@@ -12,7 +12,7 @@ case class Endpoint(name: String, url: String, interval: Int, trigger: Option[St
 
 trait ConfigurationLoader {
 
-  lazy val config = ConfigFactory.load
+  def config = ConfigFactory.load
 
   def loadEndpoints(): List[Endpoint] = {
     asScalaBuffer(config.getConfigList("monitor.endpoints")).map { c =>

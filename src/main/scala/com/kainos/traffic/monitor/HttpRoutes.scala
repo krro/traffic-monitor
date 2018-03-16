@@ -12,7 +12,7 @@ import spray.json.{DefaultJsonProtocol, PrettyPrinter}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-case class StatusMsg(endpoints: List[Endpoint], currentTask: List[String])
+case class StatusMsg(endpoints: List[Endpoint], currentTasks: List[String])
 
 class HttpRoutes(endpoints: List[Endpoint], statusActor: ActorRef)(implicit executionContext: ExecutionContext) extends DefaultJsonProtocol with SprayJsonSupport {
 

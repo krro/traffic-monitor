@@ -18,7 +18,7 @@ class Status extends Actor {
 
   override def receive: Receive = {
 
-    case DownloadStart(key) => currentTasks = key :: currentTasks
+    case DownloadStart(key) => currentTasks = currentTasks ++ List(key)
 
     case DownloadEnd(key) => currentTasks = currentTasks.filterNot(_ == key)
 
