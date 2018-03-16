@@ -39,7 +39,4 @@ class StatusTest extends TestKit(ActorSystem("status-test")) with ImplicitSender
     }
 
   }
-
-
-
 }

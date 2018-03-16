@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Sink
 
 import scala.concurrent.Future
 
-object Runner extends App with KafkaProducer with ConfigurationLoader with Downloader with RequestSources with Extractor with Parameterizer {
+object Runner extends App with KafkaProducer with ConfigurationLoader with Downloader with RequestSourceCreator with Extractor with Parameterizer {
 
   implicit val actorSystem = ActorSystem("monitor")
   implicit val materializer = ActorMaterializer()
@@ -31,8 +31,8 @@ object Runner extends App with KafkaProducer with ConfigurationLoader with Downl
     .mapAsync(5) { endpoint =>
       downloader(endpoint).map((endpoint, _))
     }
-    .map {
-      case (endpoint, content) => createRecord(endpoint, content)
+    .map { case (endpoint, content) =>
+      createRecord(endpoint, content)
     }
     .runWith(kafka)
     .onComplete {

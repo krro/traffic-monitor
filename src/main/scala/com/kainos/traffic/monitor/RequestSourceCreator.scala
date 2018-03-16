@@ -5,7 +5,7 @@ import akka.stream.scaladsl.Source
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait RequestSources extends Downloader with Utils {
+trait RequestSourceCreator extends Downloader with Utils {
 
   class Ops(val downloader: Endpoint => Future[String], val extractor: (String, List[Extraction]) => Map[String, List[String]], val parameterizer: (Endpoint, Map[String, List[String]]) => List[Endpoint])
 
