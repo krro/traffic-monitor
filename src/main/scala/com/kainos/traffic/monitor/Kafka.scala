@@ -15,7 +15,7 @@ import scala.concurrent.Future
 
 case class KafkaMsg(name: String, timestamp: Long, content: String, hash: String)
 
-trait KafkaProducer extends DefaultJsonProtocol {
+class KafkaProducer extends DefaultJsonProtocol {
 
   type ProducerMessage = ProducerRecord[String, String]
   type ProducerSink = Sink[ProducerMessage, Future[Done]]

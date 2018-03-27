@@ -10,7 +10,7 @@ case class Param(name: String, paramType: String, values: List[String] = Nil, fo
 
 case class Endpoint(name: String, url: String, interval: Int, trigger: Option[String] = None, extractions: List[Extraction] = Nil, params: List[Param] = Nil, inner: Boolean = false, ignore: Boolean = false)
 
-trait ConfigurationLoader {
+class ConfigurationLoader {
 
   def config = ConfigFactory.load
 

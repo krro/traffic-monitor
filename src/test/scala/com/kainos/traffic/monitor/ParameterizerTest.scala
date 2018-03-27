@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import org.scalatest.{Matchers, WordSpec}
 
-class ParameterizerTest extends WordSpec with Matchers{
+class ParameterizerTest extends WordSpec with Matchers {
 
   "Parameterizer" must {
 

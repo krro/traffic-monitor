@@ -19,14 +19,12 @@ class KafkaProducerTest extends TestKit(ActorSystem("status-test")) with Implici
 
   "Kafka Producer" must {
 
-    val producer = new KafkaProducer {
-      override def kafkaSettings(system: ActorSystem): ProducerSettings[String, String] = super.kafkaSettings(system).withBootstrapServers("localhost:12345")
-    }
-
     "send message to kafka" in {
 
-      import akka.pattern.pipe
-      import system.dispatcher
+      val producer = new KafkaProducer {
+        override def kafkaSettings(system: ActorSystem): ProducerSettings[String, String] = super.kafkaSettings(system).withBootstrapServers("localhost:12345")
+      }
+
       implicit val materializer = ActorMaterializer()
 
       import producer._

@@ -4,7 +4,7 @@ import java.util
 
 import com.jayway.jsonpath.{Configuration, JsonPath, Option}
 
-trait Extractor {
+class Extractor {
 
   def extract(content: String, extractions: List[Extraction]): Map[String, List[String]] = {
     extractions.map { extract =>

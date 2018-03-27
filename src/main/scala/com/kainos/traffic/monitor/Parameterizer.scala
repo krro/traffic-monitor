@@ -3,7 +3,7 @@ package com.kainos.traffic.monitor
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-trait Parameterizer {
+class Parameterizer {
 
   def parameterize(endpoint: Endpoint, extractions: Map[String, List[String]]): List[Endpoint] = {
     endpoint.params.foldLeft(List(endpoint)) {

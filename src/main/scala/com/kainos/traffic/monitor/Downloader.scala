@@ -11,7 +11,7 @@ import com.kainos.traffic.monitor.Status.{DownloadEnd, DownloadStart}
 
 import scala.concurrent.Future
 
-trait Downloader {
+class Downloader {
 
   def downloadEndpoint(endpoint: Endpoint, statusActor: ActorRef)(implicit actorSystem: ActorSystem): Future[String] = {
     import actorSystem.dispatcher

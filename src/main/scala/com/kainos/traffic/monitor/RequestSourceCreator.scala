@@ -2,12 +2,15 @@ package com.kainos.traffic.monitor
 
 import scala.concurrent.duration._
 import akka.stream.scaladsl.Source
+import com.kainos.traffic.monitor.RequestSourceCreator.Ops
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait RequestSourceCreator extends Downloader with Utils {
-
+object RequestSourceCreator {
   class Ops(val downloader: Endpoint => Future[String], val extractor: (String, List[Extraction]) => Map[String, List[String]], val parameterizer: (Endpoint, Map[String, List[String]]) => List[Endpoint])
+}
+
+class RequestSourceCreator extends Downloader with Utils {
 
   def createEndpointDownloadEventSource(endpoints: List[Endpoint], ops: Ops)(implicit executionContext: ExecutionContext): Source[Endpoint, _] = {
     combine(
@@ -24,7 +27,8 @@ trait RequestSourceCreator extends Downloader with Utils {
   }
 
   private def createSimpleTickSource(endpoint: Endpoint): Source[Endpoint, _] = {
-    Source.tick(0 second, endpoint.interval seconds, endpoint)
+//    Source.tick(0 second, endpoint.interval seconds, endpoint)
+    Source.single(endpoint)
   }
 
   private def createComplexSource(endpoint: Endpoint, innerEndpoint: Endpoint, ops: Ops)(implicit executionContext: ExecutionContext): Source[Endpoint, _] = {

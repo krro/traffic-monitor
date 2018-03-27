@@ -19,3 +19,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit" % "10.0.11" % 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 
 libraryDependencies += "net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test"
+
+libraryDependencies += "org.mockito" % "mockito-core" % "2.16.0" % Test

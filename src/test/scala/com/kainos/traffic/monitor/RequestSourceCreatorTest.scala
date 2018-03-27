@@ -24,7 +24,7 @@ class RequestSourceCreatorTest extends TestKit(ActorSystem("status-test")) with 
 
       val endpoints = List(endpoint)
 
-      val source = sourceCreator.createEndpointDownloadEventSource(endpoints, new sourceCreator.Ops(
+      val source = sourceCreator.createEndpointDownloadEventSource(endpoints, new RequestSourceCreator.Ops(
         e => Future.successful("content"),
         (e, _) => Map.empty,
         (e, _) => List(e)
@@ -62,7 +62,7 @@ class RequestSourceCreatorTest extends TestKit(ActorSystem("status-test")) with 
 
       val masterContent = "content"
 
-      val source = sourceCreator.createEndpointDownloadEventSource(endpoints, new sourceCreator.Ops(
+      val source = sourceCreator.createEndpointDownloadEventSource(endpoints, new RequestSourceCreator.Ops(
         e => Future.successful(masterContent),
         (e, _) => extractions,
         (e, _) => List(endpointDetail1, endpointDetail2)

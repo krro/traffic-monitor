@@ -1,10 +1,12 @@
 package com.kainos.traffic.monitor
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, ActorSystem}
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.pattern.ask
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.kainos.traffic.monitor.Status.{GetKeys, Keys}
 import spray.json.{DefaultJsonProtocol, PrettyPrinter}
@@ -29,6 +31,11 @@ class HttpRoutes(endpoints: List[Endpoint], statusActor: ActorRef)(implicit exec
         StatusMsg(endpoints, keys.keys)
       }
     }
+  }
+
+  def bind()(implicit actorSystem: ActorSystem) = {
+    implicit val materializer = ActorMaterializer()
+    Http().bindAndHandle(routes, "localhost", 8080)
   }
 
 }
